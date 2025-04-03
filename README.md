@@ -1,4 +1,5 @@
-# loc-i18next
+# loc-i18next-interpolation
+
 ## Introduction
 
 A replicate of [jquery-i18next](https://github.com/i18next/jquery-i18next) module (which is great by the way!), intended for use without jquery.
@@ -28,6 +29,7 @@ const localize = locI18next.init(i18next, {
   selectorAttr: 'data-i18n', // selector for translating elements
   targetAttr: 'i18n-target',
   optionsAttr: 'i18n-options',
+  insertTagName: 'loc-i18n', // prepend, append tagName
   useOptionsAttr: false,
   parseDefaultValueFromContent: true
   document: window.document,
@@ -119,6 +121,23 @@ localize("#btn1");
 ### set as an attribute
 ```js
 <a id="btn1" href="#" data-i18n="[data-someNameAttribute]key.for.content"></a>
+localize("#btn1");
+```
+
+### loc-i18next-interpolation: Use `textContent` as the key.
+```js
+<a id="btn1" href="#" data-i18n="[useTextContent]">key.for.content</a>
+localize("#btn1");
+```
+
+### loc-i18next-interpolation: Element interpolation feature.
+```js
+<a
+  id="btn1"
+  href="#"
+  data-i18n="key.for.interpolation"
+  data-i18n-interpolation='{"name":"foo", "count":1}'
+></a>
 localize("#btn1");
 ```
 

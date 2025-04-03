@@ -4,39 +4,55 @@
   (global.locI18next = factory());
 }(this, (function () { 'use strict';
 
-function _defineProperty(obj, key, value) {
-  if (key in obj) {
-    Object.defineProperty(obj, key, {
-      value: value,
-      enumerable: true,
-      configurable: true,
-      writable: true
-    });
-  } else {
-    obj[key] = value;
-  }
-  return obj;
+function _defineProperty(e, r, t) {
+  return (r = _toPropertyKey(r)) in e ? Object.defineProperty(e, r, {
+    value: t,
+    enumerable: !0,
+    configurable: !0,
+    writable: !0
+  }) : e[r] = t, e;
 }
-function _objectSpread(target) {
-  for (var i = 1; i < arguments.length; i++) {
-    var source = arguments[i] != null ? arguments[i] : {};
-    var ownKeys = Object.keys(source);
-    if (typeof Object.getOwnPropertySymbols === 'function') {
-      ownKeys = ownKeys.concat(Object.getOwnPropertySymbols(source).filter(function (sym) {
-        return Object.getOwnPropertyDescriptor(source, sym).enumerable;
-      }));
-    }
-    ownKeys.forEach(function (key) {
-      _defineProperty(target, key, source[key]);
+function ownKeys(e, r) {
+  var t = Object.keys(e);
+  if (Object.getOwnPropertySymbols) {
+    var o = Object.getOwnPropertySymbols(e);
+    r && (o = o.filter(function (r) {
+      return Object.getOwnPropertyDescriptor(e, r).enumerable;
+    })), t.push.apply(t, o);
+  }
+  return t;
+}
+function _objectSpread2(e) {
+  for (var r = 1; r < arguments.length; r++) {
+    var t = null != arguments[r] ? arguments[r] : {};
+    r % 2 ? ownKeys(Object(t), !0).forEach(function (r) {
+      _defineProperty(e, r, t[r]);
+    }) : Object.getOwnPropertyDescriptors ? Object.defineProperties(e, Object.getOwnPropertyDescriptors(t)) : ownKeys(Object(t)).forEach(function (r) {
+      Object.defineProperty(e, r, Object.getOwnPropertyDescriptor(t, r));
     });
   }
-  return target;
+  return e;
+}
+function _toPrimitive(t, r) {
+  if ("object" != typeof t || !t) return t;
+  var e = t[Symbol.toPrimitive];
+  if (void 0 !== e) {
+    var i = e.call(t, r || "default");
+    if ("object" != typeof i) return i;
+    throw new TypeError("@@toPrimitive must return a primitive value.");
+  }
+  return ("string" === r ? String : Number)(t);
+}
+function _toPropertyKey(t) {
+  var i = _toPrimitive(t, "string");
+  return "symbol" == typeof i ? i : i + "";
 }
 
 var defaults = {
   selectorAttr: 'data-i18n',
   targetAttr: 'i18n-target',
   optionsAttr: 'i18n-options',
+  insertTagName: 'loc-i18n',
   useOptionsAttr: false,
   parseDefaultValueFromContent: true,
   // `document` if running inside a browser, but otherwise undefined (prevents reference error when ran outside browser)
@@ -44,12 +60,22 @@ var defaults = {
 };
 function init(i18next) {
   var options = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
-  options = _objectSpread({}, defaults, options);
-  var extendDefault = function extendDefault(o, val) {
-    return options.parseDefaultValueFromContent ? _objectSpread({}, o, {
+  options = _objectSpread2(_objectSpread2({}, defaults), options);
+  var extendDefault = function extendDefault(o, interpolationObj, val) {
+    return options.parseDefaultValueFromContent ? _objectSpread2(_objectSpread2(_objectSpread2({}, o), interpolationObj), {}, {
       defaultValue: val
-    }) : o;
+    }) : _objectSpread2(_objectSpread2({}, o), interpolationObj);
   };
+  function getInterpolationObj(elem) {
+    var _elem$getAttribute;
+    var interpolationAttr = (_elem$getAttribute = elem.getAttribute(options.selectorAttr + "-interpolation")) !== null && _elem$getAttribute !== void 0 ? _elem$getAttribute : "{}";
+    try {
+      return relaxedJsonParse(interpolationAttr);
+    } catch (e) {
+      console.error(e);
+      return {};
+    }
+  }
   function parse(elem, key, opts) {
     var attr = 'text';
     if (key.indexOf('[') == 0) {
@@ -58,33 +84,39 @@ function init(i18next) {
       attr = parts[0].substr(1, parts[0].length - 1);
     }
     key = key.indexOf(';') == key.length - 1 ? key.substr(0, key.length - 2) : key;
+    var openingTag = "<".concat(options.insertTagName, ">");
+    var closingTag = "</".concat(options.insertTagName, ">");
+    var interpolationObj = getInterpolationObj(elem);
     if (attr === 'html') {
-      elem.innerHTML = i18next.t(key, extendDefault(opts, elem.innerHTML));
+      elem.innerHTML = i18next.t(key, extendDefault(opts, interpolationObj, elem.innerHTML));
     } else if (attr === 'text') {
-      elem.textContent = i18next.t(key, extendDefault(opts, elem.textContent));
+      elem.textContent = i18next.t(key, extendDefault(opts, interpolationObj, elem.textContent));
     } else if (attr === 'prepend') {
-      var startIdx = elem.innerHTML.indexOf('<loc-i18n>');
-      var endIdx = elem.innerHTML.indexOf('</loc-i18n>') + 11;
+      var startIdx = elem.innerHTML.indexOf(openingTag);
+      var endIdx = elem.innerHTML.indexOf(closingTag) + 11;
       if (startIdx > -1 && endIdx > 6) {
         elem.innerHTML = [elem.innerHTML.substring(0, startIdx), elem.innerHTML.slice(endIdx)].join('');
       }
-      elem.innerHTML = ['<loc-i18n>', i18next.t(key, extendDefault(opts, elem.innerHTML)), '</loc-i18n>', elem.innerHTML].join('');
+      elem.innerHTML = [openingTag, i18next.t(key, extendDefault(opts, interpolationObj, elem.innerHTML)), closingTag, elem.innerHTML].join('');
     } else if (attr === 'append') {
-      var _startIdx = elem.innerHTML.indexOf('<loc-i18n>');
-      var _endIdx = elem.innerHTML.indexOf('</loc-i18n>') + 11;
+      var _startIdx = elem.innerHTML.indexOf(openingTag);
+      var _endIdx = elem.innerHTML.indexOf(closingTag) + 11;
       if (_startIdx > -1 && _endIdx > 6) {
         elem.innerHTML = [elem.innerHTML.substring(0, _startIdx), elem.innerHTML.slice(_endIdx)].join('');
       }
-      elem.innerHTML = [elem.innerHTML, '<loc-i18n>', i18next.t(key, extendDefault(opts, elem.innerHTML), '</loc-i18n>')].join('');
+      elem.innerHTML = [elem.innerHTML, openingTag, i18next.t(key, extendDefault(opts, interpolationObj, elem.innerHTML), closingTag)].join('');
+    } else if (attr === 'useTextContent') {
+      var textContentKey = elem.textContent;
+      elem.textContent = i18next.t(textContentKey, extendDefault(opts, interpolationObj, elem.textContent));
     } else if (attr.indexOf('data-') === 0) {
       var dataAttr = attr.substr('data-'.length);
-      var translated = i18next.t(key, extendDefault(opts, elem.getAttribute(dataAttr)));
+      var translated = i18next.t(key, extendDefault(opts, interpolationObj, elem.getAttribute(dataAttr)));
       // we change into the data cache
       elem.setAttribute(dataAttr, translated);
       // we change into the dom
       elem.setAttribute(attr, translated);
     } else {
-      elem.setAttribute(attr, i18next.t(key, extendDefault(opts, elem.getAttribute(attr))));
+      elem.setAttribute(attr, i18next.t(key, extendDefault(opts, interpolationObj, elem.getAttribute(attr))));
     }
   }
   ;
@@ -115,7 +147,7 @@ function init(i18next) {
     }
     if (options.useOptionsAttr === true) {
       var clone = {};
-      clone = _objectSpread({
+      clone = _objectSpread2({
         clone: clone
       }, opts);
       delete clone.lng;

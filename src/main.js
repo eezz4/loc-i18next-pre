@@ -2,16 +2,33 @@ const defaults = {
     selectorAttr: 'data-i18n',
     targetAttr: 'i18n-target',
     optionsAttr: 'i18n-options',
+    insertTagName: 'loc-i18n',
     useOptionsAttr: false,
     parseDefaultValueFromContent: true,
     // `document` if running inside a browser, but otherwise undefined (prevents reference error when ran outside browser)
     document: typeof window !== 'undefined' ? document : undefined,
 };
 
+
+
+
 function init(i18next, options={}){
+    
     options = { ...defaults, ...options };
-    var extendDefault = (o, val) => options.parseDefaultValueFromContent
-                                    ? { ...o, ...{ defaultValue: val } } : o;
+    var extendDefault = (o, interpolationObj, val) => options.parseDefaultValueFromContent
+                                    ? { ...o, ...interpolationObj, defaultValue: val } : { ...o, ...interpolationObj }; 
+    
+    function getInterpolationObj(elem){
+        const interpolationAttr = elem.getAttribute(options.selectorAttr + "-interpolation") ?? "{}";
+        try{
+            return relaxedJsonParse(interpolationAttr);
+        } catch (e){
+            console.error(e);
+            return {};
+        }     
+    }
+
+
     function parse(elem, key, opts){
         var attr = 'text';
 
@@ -25,33 +42,41 @@ function init(i18next, options={}){
             ? key.substr(0, key.length - 2)
         	  : key;
 
+        const openingTag = `<${options.insertTagName}>`;
+        const closingTag = `</${options.insertTagName}>`;
+
+        const interpolationObj = getInterpolationObj(elem);
+
         if (attr === 'html') {
-            elem.innerHTML = i18next.t(key, extendDefault(opts, elem.innerHTML));
+            elem.innerHTML = i18next.t(key, extendDefault(opts, interpolationObj, elem.innerHTML));
         } else if(attr === 'text') {
-            elem.textContent = i18next.t(key, extendDefault(opts, elem.textContent));
+            elem.textContent = i18next.t(key, extendDefault(opts, interpolationObj, elem.textContent));
         } else if(attr === 'prepend') {
-            let startIdx = elem.innerHTML.indexOf('<loc-i18n>');
-            let endIdx = elem.innerHTML.indexOf('</loc-i18n>') + 11;
+            let startIdx = elem.innerHTML.indexOf(openingTag);
+            let endIdx = elem.innerHTML.indexOf(closingTag) + 11;
             if (startIdx > -1 && endIdx > 6) {
                 elem.innerHTML = [elem.innerHTML.substring(0, startIdx), elem.innerHTML.slice(endIdx)].join('')
             }
-            elem.innerHTML = ['<loc-i18n>', i18next.t(key, extendDefault(opts, elem.innerHTML)), '</loc-i18n>', elem.innerHTML].join('');
+            elem.innerHTML = [openingTag, i18next.t(key, extendDefault(opts, interpolationObj, elem.innerHTML)), closingTag, elem.innerHTML].join('');
         } else if(attr === 'append') {
-            let startIdx = elem.innerHTML.indexOf('<loc-i18n>');
-            let endIdx = elem.innerHTML.indexOf('</loc-i18n>') + 11;
+            let startIdx = elem.innerHTML.indexOf(openingTag);
+            let endIdx = elem.innerHTML.indexOf(closingTag) + 11;
             if (startIdx > -1 && endIdx > 6) {
                 elem.innerHTML = [elem.innerHTML.substring(0, startIdx), elem.innerHTML.slice(endIdx)].join('')
             }
-            elem.innerHTML = [elem.innerHTML, '<loc-i18n>', i18next.t(key, extendDefault(opts, elem.innerHTML), '</loc-i18n>')].join('');
+            elem.innerHTML = [elem.innerHTML, openingTag, i18next.t(key, extendDefault(opts, interpolationObj, elem.innerHTML), closingTag)].join('');
+        } else if( attr === 'useTextContent') {
+            const textContentKey = elem.textContent;
+            elem.textContent = i18next.t(textContentKey, extendDefault(opts, interpolationObj, elem.textContent));
         } else if(attr.indexOf('data-') === 0) {
             let dataAttr = attr.substr('data-'.length);
-            let translated = i18next.t(key, extendDefault(opts, elem.getAttribute(dataAttr)));
+            let translated = i18next.t(key, extendDefault(opts, interpolationObj, elem.getAttribute(dataAttr)));
             // we change into the data cache
             elem.setAttribute(dataAttr, translated);
             // we change into the dom
             elem.setAttribute(attr, translated);
         } else {
-            elem.setAttribute(attr, i18next.t(key, extendDefault(opts, elem.getAttribute(attr))));
+            elem.setAttribute(attr, i18next.t(key, extendDefault(opts, interpolationObj, elem.getAttribute(attr))));
         }
     };
 
