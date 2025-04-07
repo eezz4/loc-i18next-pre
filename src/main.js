@@ -126,9 +126,17 @@ function init(i18next, options={}){
         }
     }
 
-    function handle(selector, opts){
-        const document = opts?.document || options.document;
-        var elems = document.querySelectorAll(selector);
+    function handle(targetRoot, opts){
+        const documentScope = opts?.document || options.document;
+        var elems = [];
+        if (targetRoot instanceof HTMLElement) {
+          elems = [targetRoot];
+        } else if (targetRoot === documentScope) {
+          elems = [documentScope.querySelector("html")];
+        } else {
+          elems = documentScope.querySelectorAll(targetRoot);
+        }        
+
         for(let i = 0; i < elems.length; i++){
             let elem = elems[i];
             let childs = elem.querySelectorAll('[' + options.selectorAttr + ']');

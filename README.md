@@ -140,6 +140,12 @@ localize("#btn1");
 ></a>
 localize("#btn1");
 ```
+### loc-i18next-interpolation: Extend Handle Target
+```js
+localize("#btn1");
+localize(document.querySelector("#btn1"));
+localize(document);
+```
 
 ### use a custom `document` object
 ```js

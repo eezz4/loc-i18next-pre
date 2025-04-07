@@ -155,8 +155,15 @@ function init(i18next) {
     }
   }
   function handle(selector, opts) {
-    var document = (opts === null || opts === void 0 ? void 0 : opts.document) || options.document;
-    var elems = document.querySelectorAll(selector);
+    var documentScope = (opts === null || opts === void 0 ? void 0 : opts.document) || options.document;
+    var elems = [];
+    if (selector instanceof HTMLElement) {
+      elems = [selector];
+    } else if (selector === documentScope) {
+      elems = [documentScope.querySelector("html")];
+    } else {
+      elems = documentScope.querySelectorAll(selector);
+    }
     for (var i = 0; i < elems.length; i++) {
       var elem = elems[i];
       var childs = elem.querySelectorAll('[' + options.selectorAttr + ']');
