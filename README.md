@@ -131,15 +131,16 @@ localize("#btn1");
 localize("#btn1");
 ```
 
-### loc-i18next-pre: Element pre feature.
+### loc-i18next-pre: pre translate feature.
 ```js
 // key.price.currency : "{{price}} {{currency}}"
+// key.currency.dollar: "dollar",
 <a
   id="btn1"
   href="#"
   data-i18n="key.price.currency"
   data-i18n-options="{price: 100}"
-  data-i18n-pre="{currency: 'dollar'}"
+  data-i18n-pre="{currency: 'key.currency.dollar'}"
 ></a>
 localize("#btn1");
 ```
