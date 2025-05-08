@@ -1,4 +1,4 @@
-# loc-i18next-interpolation
+# loc-i18next-pre
 
 ## Introduction
 
@@ -30,6 +30,7 @@ const localize = locI18next.init(i18next, {
   targetAttr: 'i18n-target',
   optionsAttr: 'i18n-options',
   insertTagName: 'loc-i18n', // prepend, append tagName
+  preTranslateAttr: 'data-i18n-pre', // attribute for translating before the element is processed
   useOptionsAttr: false,
   parseDefaultValueFromContent: true
   document: window.document,
@@ -124,27 +125,28 @@ localize("#btn1");
 localize("#btn1");
 ```
 
-### loc-i18next-interpolation: Use `textContent` as the key.
+### loc-i18next-pre: Use `textContent` as the key.
 ```js
 <a id="btn1" href="#" data-i18n="[useTextContent]">key.for.content</a>
 localize("#btn1");
 ```
 
-### loc-i18next-interpolation: Element interpolation feature.
+### loc-i18next-pre: Element pre feature.
 ```js
+// key.price.currency : "{{price}} {{currency}}"
 <a
   id="btn1"
   href="#"
-  data-i18n="key.for.interpolation"
-  data-i18n-interpolation='{"name":"foo", "count":1}'
+  data-i18n="key.price.currency"
+  data-i18n-options="{price: 100}"
+  data-i18n-pre="{currency: 'dollar'}"
 ></a>
 localize("#btn1");
 ```
-### loc-i18next-interpolation: Extend Handle Target
+### loc-i18next-pre: Extend Handle Target
 ```js
 localize("#btn1");
 localize(document.querySelector("#btn1"));
-localize(document);
 ```
 
 ### use a custom `document` object
