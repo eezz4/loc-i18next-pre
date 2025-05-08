@@ -2,6 +2,7 @@ const defaults = {
     selectorAttr: 'data-i18n',
     targetAttr: 'i18n-target',
     optionsAttr: 'i18n-options',
+    preTranslateAttr: 'data-i18n-pre',
     insertTagName: 'loc-i18n',
     useOptionsAttr: false,
     parseDefaultValueFromContent: true,
@@ -9,26 +10,10 @@ const defaults = {
     document: typeof window !== 'undefined' ? document : undefined,
 };
 
-
-
-
 function init(i18next, options={}){
-    
     options = { ...defaults, ...options };
-    var extendDefault = (o, interpolationObj, val) => options.parseDefaultValueFromContent
-                                    ? { ...o, ...interpolationObj, defaultValue: val } : { ...o, ...interpolationObj }; 
-    
-    function getInterpolationObj(elem){
-        const interpolationAttr = elem.getAttribute(options.selectorAttr + "-interpolation") ?? "{}";
-        try{
-            return relaxedJsonParse(interpolationAttr);
-        } catch (e){
-            console.error(e);
-            return {};
-        }     
-    }
-
-
+    var extendDefault = (o, val) => options.parseDefaultValueFromContent
+                                    ? { ...o, ...{ defaultValue: val } } : o;
     function parse(elem, key, opts){
         var attr = 'text';
 
@@ -45,38 +30,36 @@ function init(i18next, options={}){
         const openingTag = `<${options.insertTagName}>`;
         const closingTag = `</${options.insertTagName}>`;
 
-        const interpolationObj = getInterpolationObj(elem);
-
         if (attr === 'html') {
-            elem.innerHTML = i18next.t(key, extendDefault(opts, interpolationObj, elem.innerHTML));
+            elem.innerHTML = i18next.t(key, extendDefault(opts, elem.innerHTML));
         } else if(attr === 'text') {
-            elem.textContent = i18next.t(key, extendDefault(opts, interpolationObj, elem.textContent));
+            elem.textContent = i18next.t(key, extendDefault(opts, elem.textContent));
         } else if(attr === 'prepend') {
             let startIdx = elem.innerHTML.indexOf(openingTag);
             let endIdx = elem.innerHTML.indexOf(closingTag) + 11;
             if (startIdx > -1 && endIdx > 6) {
                 elem.innerHTML = [elem.innerHTML.substring(0, startIdx), elem.innerHTML.slice(endIdx)].join('')
             }
-            elem.innerHTML = [openingTag, i18next.t(key, extendDefault(opts, interpolationObj, elem.innerHTML)), closingTag, elem.innerHTML].join('');
+            elem.innerHTML = [openingTag, i18next.t(key, extendDefault(opts, elem.innerHTML)), closingTag, elem.innerHTML].join('');
         } else if(attr === 'append') {
             let startIdx = elem.innerHTML.indexOf(openingTag);
             let endIdx = elem.innerHTML.indexOf(closingTag) + 11;
             if (startIdx > -1 && endIdx > 6) {
                 elem.innerHTML = [elem.innerHTML.substring(0, startIdx), elem.innerHTML.slice(endIdx)].join('')
             }
-            elem.innerHTML = [elem.innerHTML, openingTag, i18next.t(key, extendDefault(opts, interpolationObj, elem.innerHTML), closingTag)].join('');
+            elem.innerHTML = [elem.innerHTML, openingTag, i18next.t(key, extendDefault(opts, elem.innerHTML), closingTag)].join('');
         } else if( attr === 'useTextContent') {
             const textContentKey = elem.textContent;
-            elem.textContent = i18next.t(textContentKey, extendDefault(opts, interpolationObj, elem.textContent));
+            elem.textContent = i18next.t(textContentKey, extendDefault(opts, elem.textContent));
         } else if(attr.indexOf('data-') === 0) {
             let dataAttr = attr.substr('data-'.length);
-            let translated = i18next.t(key, extendDefault(opts, interpolationObj, elem.getAttribute(dataAttr)));
+            let translated = i18next.t(key, extendDefault(opts, elem.getAttribute(dataAttr)));
             // we change into the data cache
             elem.setAttribute(dataAttr, translated);
             // we change into the dom
             elem.setAttribute(attr, translated);
         } else {
-            elem.setAttribute(attr, i18next.t(key, extendDefault(opts, interpolationObj, elem.getAttribute(attr))));
+            elem.setAttribute(attr, i18next.t(key, extendDefault(opts, elem.getAttribute(attr))));
         }
     };
 
@@ -104,8 +87,13 @@ function init(i18next, options={}){
         if(targetSelector != null)
             target = elem.querySelector(targetSelector) || elem;
 
-        if(!opts && options.useOptionsAttr === true)
+        if(!opts && options.useOptionsAttr === true){
+            const preTranslateObj = relaxedJsonParse(elem.getAttribute(options.preTranslateAttr) ?? "{}");
+            const preTranslatedObj =  Object.fromEntries(Object.entries(preTranslateObj).map(([key, value]) => [key, i18next.t(value, {defaultValue: value})]));
+        
             opts = relaxedJsonParse(elem.getAttribute(options.optionsAttr) || '{}');
+            opts = {...opts, ...preTranslatedObj}
+        }
 
         opts = opts || {};
 
@@ -127,15 +115,13 @@ function init(i18next, options={}){
     }
 
     function handle(targetRoot, opts){
-        const documentScope = opts?.document || options.document;
         var elems = [];
         if (targetRoot instanceof HTMLElement) {
-          elems = [targetRoot];
-        } else if (targetRoot === documentScope) {
-          elems = [documentScope.querySelector("html")];
-        } else {
-          elems = documentScope.querySelectorAll(targetRoot);
-        }        
+            elems = [targetRoot];
+        } else{
+            const documentScope = opts?.document || options.document;
+            elems = documentScope.querySelectorAll(targetRoot);
+        }
 
         for(let i = 0; i < elems.length; i++){
             let elem = elems[i];
