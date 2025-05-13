@@ -1,4 +1,5 @@
-# loc-i18next
+# loc-i18next-pre
+
 ## Introduction
 
 A replicate of [jquery-i18next](https://github.com/i18next/jquery-i18next) module (which is great by the way!), intended for use without jquery.
@@ -28,6 +29,8 @@ const localize = locI18next.init(i18next, {
   selectorAttr: 'data-i18n', // selector for translating elements
   targetAttr: 'i18n-target',
   optionsAttr: 'i18n-options',
+  insertTagName: 'loc-i18n', // prepend, append tagName
+  preTranslateAttr: 'data-i18n-pre', // attribute for translating before the element is processed
   useOptionsAttr: false,
   parseDefaultValueFromContent: true
   document: window.document,
@@ -120,6 +123,31 @@ localize("#btn1");
 ```js
 <a id="btn1" href="#" data-i18n="[data-someNameAttribute]key.for.content"></a>
 localize("#btn1");
+```
+
+### loc-i18next-pre: Use `textContent` as the key.
+```js
+<a id="btn1" href="#" data-i18n="[useTextContent]">key.for.content</a>
+localize("#btn1");
+```
+
+### loc-i18next-pre: pre translate feature.
+```js
+// key.price.currency : "{{price}} {{currency}}"
+// key.currency.dollar: "dollar",
+<a
+  id="btn1"
+  href="#"
+  data-i18n="key.price.currency"
+  data-i18n-options="{price: 100}"
+  data-i18n-pre="{currency: 'key.currency.dollar'}"
+></a>
+localize("#btn1");
+```
+### loc-i18next-pre: Extend Handle Target
+```js
+localize("#btn1");
+localize(document.querySelector("#btn1"));
 ```
 
 ### use a custom `document` object

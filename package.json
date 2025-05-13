@@ -1,6 +1,6 @@
 {
-  "name": "loc-i18next",
-  "version": "0.1.6",
+  "name": "loc-i18next-pre",
+  "version": "0.2.0",
   "description": "Smart selectors to be used with i18next",
   "main": "index.js",
   "directories": {
@@ -12,6 +12,7 @@
     "@babel/plugin-proposal-optional-chaining": "^7.21.0",
     "@babel/preset-env": "^7.0.0",
     "babel-eslint": "^10.0.1",
+    "cross-env": "^7.0.3",
     "eslint": "^4.12.1",
     "eslint-config-airbnb": "10.0.1",
     "i18next": "^3.4.3",
@@ -28,7 +29,7 @@
   "scripts": {
     "clean": "rimraf dist && mkdirp dist",
     "copy": "cp ./dist/umd/loc-i18next.min.js ./loc-i18next.min.js && cp ./dist/umd/loc-i18next.js ./loc-i18next.js",
-    "build:es": "BABEL_ENV=jsnext babel src --out-dir dist/es",
+    "build:es": "cross-env BABEL_ENV=jsnext babel src --out-dir dist/es",
     "build:cjs": "babel src --out-dir dist/commonjs",
     "build:umd": "rollup -c rollup.config.js --format umd && rollup -c rollup.config.js --format umd --uglify",
     "build:amd": "rollup -c rollup.config.js --format amd && rollup -c rollup.config.js --format umd --uglify",

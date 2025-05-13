@@ -2,6 +2,8 @@ const defaults = {
     selectorAttr: 'data-i18n',
     targetAttr: 'i18n-target',
     optionsAttr: 'i18n-options',
+    preTranslateAttr: 'data-i18n-pre',
+    insertTagName: 'loc-i18n',
     useOptionsAttr: false,
     parseDefaultValueFromContent: true,
     // `document` if running inside a browser, but otherwise undefined (prevents reference error when ran outside browser)
@@ -25,24 +27,30 @@ function init(i18next, options={}){
             ? key.substr(0, key.length - 2)
         	  : key;
 
+        const openingTag = `<${options.insertTagName}>`;
+        const closingTag = `</${options.insertTagName}>`;
+
         if (attr === 'html') {
             elem.innerHTML = i18next.t(key, extendDefault(opts, elem.innerHTML));
         } else if(attr === 'text') {
             elem.textContent = i18next.t(key, extendDefault(opts, elem.textContent));
         } else if(attr === 'prepend') {
-            let startIdx = elem.innerHTML.indexOf('<loc-i18n>');
-            let endIdx = elem.innerHTML.indexOf('</loc-i18n>') + 11;
+            let startIdx = elem.innerHTML.indexOf(openingTag);
+            let endIdx = elem.innerHTML.indexOf(closingTag) + 11;
             if (startIdx > -1 && endIdx > 6) {
                 elem.innerHTML = [elem.innerHTML.substring(0, startIdx), elem.innerHTML.slice(endIdx)].join('')
             }
-            elem.innerHTML = ['<loc-i18n>', i18next.t(key, extendDefault(opts, elem.innerHTML)), '</loc-i18n>', elem.innerHTML].join('');
+            elem.innerHTML = [openingTag, i18next.t(key, extendDefault(opts, elem.innerHTML)), closingTag, elem.innerHTML].join('');
         } else if(attr === 'append') {
-            let startIdx = elem.innerHTML.indexOf('<loc-i18n>');
-            let endIdx = elem.innerHTML.indexOf('</loc-i18n>') + 11;
+            let startIdx = elem.innerHTML.indexOf(openingTag);
+            let endIdx = elem.innerHTML.indexOf(closingTag) + 11;
             if (startIdx > -1 && endIdx > 6) {
                 elem.innerHTML = [elem.innerHTML.substring(0, startIdx), elem.innerHTML.slice(endIdx)].join('')
             }
-            elem.innerHTML = [elem.innerHTML, '<loc-i18n>', i18next.t(key, extendDefault(opts, elem.innerHTML), '</loc-i18n>')].join('');
+            elem.innerHTML = [elem.innerHTML, openingTag, i18next.t(key, extendDefault(opts, elem.innerHTML), closingTag)].join('');
+        } else if( attr === 'useTextContent') {
+            const textContentKey = elem.textContent;
+            elem.textContent = i18next.t(textContentKey, extendDefault(opts, elem.textContent));
         } else if(attr.indexOf('data-') === 0) {
             let dataAttr = attr.substr('data-'.length);
             let translated = i18next.t(key, extendDefault(opts, elem.getAttribute(dataAttr)));
@@ -79,8 +87,13 @@ function init(i18next, options={}){
         if(targetSelector != null)
             target = elem.querySelector(targetSelector) || elem;
 
-        if(!opts && options.useOptionsAttr === true)
+        if(!opts && options.useOptionsAttr === true){
+            const preTranslateObj = relaxedJsonParse(elem.getAttribute(options.preTranslateAttr) ?? "{}");
+            const preTranslatedObj =  Object.fromEntries(Object.entries(preTranslateObj).map(([key, value]) => [key, i18next.t(value, {defaultValue: value})]));
+        
             opts = relaxedJsonParse(elem.getAttribute(options.optionsAttr) || '{}');
+            opts = {...opts, ...preTranslatedObj}
+        }
 
         opts = opts || {};
 
@@ -101,9 +114,15 @@ function init(i18next, options={}){
         }
     }
 
-    function handle(selector, opts){
-        const document = opts?.document || options.document;
-        var elems = document.querySelectorAll(selector);
+    function handle(targetRoot, opts){
+        var elems = [];
+        if (targetRoot instanceof HTMLElement) {
+            elems = [targetRoot];
+        } else{
+            const documentScope = opts?.document || options.document;
+            elems = documentScope.querySelectorAll(targetRoot);
+        }
+
         for(let i = 0; i < elems.length; i++){
             let elem = elems[i];
             let childs = elem.querySelectorAll('[' + options.selectorAttr + ']');
