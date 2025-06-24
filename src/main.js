@@ -49,7 +49,7 @@ function init(i18next, options={}){
             }
             elem.innerHTML = [elem.innerHTML, openingTag, i18next.t(key, extendDefault(opts, elem.innerHTML), closingTag)].join('');
         } else if( attr === 'useTextContent') {
-            const textContentKey = elem.textContent;
+            const textContentKey = elem.textContent.trim();
             elem.textContent = i18next.t(textContentKey, extendDefault(opts, elem.textContent));
         } else if(attr.indexOf('data-') === 0) {
             let dataAttr = attr.substr('data-'.length);
