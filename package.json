@@ -1,6 +1,6 @@
 {
   "name": "loc-i18next-pre",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Smart selectors to be used with i18next",
   "main": "index.js",
   "directories": {
